@@ -9,7 +9,7 @@ if script_version.alpha == true then
 else 
     script_version.alpha = "Release version"
 end
-print("MADE BY LUCAS\nScript Version " .. script_version.version .. " - " .. script_version.alpha)
+print("MADE BY RTaO\nScript Version " .. script_version.version .. " - " .. script_version.alpha)
 local vful = script_version.version .." - ".. script_version.alpha
 getgenv().vers = vful
 
@@ -40,7 +40,7 @@ end)
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Grow a Garden |",
+    Title = "RTaO HUB |",
     SubTitle = "Made by RTaO | Version: ".. vful,
     TabWidth = 180,
     Size = UDim2.fromOffset(600, 350),
@@ -58,8 +58,8 @@ local player = Window:AddTab({
     Icon = "user"
 })
 
-local loja = Window:AddTab({
-    Title = "Loja",
+local Shop = Window:AddTab({
+    Title = "Shop",
     Icon = "shopping-cart" 
 })
 
@@ -209,9 +209,9 @@ end
 
 -- Local Script --
 
-local section = loja:AddSection("Seeds")
+local section = Shop:AddSection("Seeds")
 
-loja:AddToggle("", {
+Shop:AddToggle("", {
     Title = "Buy shop seed",
     Description = "Buy select shop seed",
     Default = false,
@@ -220,7 +220,7 @@ loja:AddToggle("", {
     end
 })
 
-local dropdownSeed = loja:AddDropdown("DropdownSeed", {
+local dropdownSeed = Shop:AddDropdown("DropdownSeed", {
     Title = "Selecione seeds para comprar\n",
     Description = "Selecione select para comprar\n",
     Values = byallseed,
@@ -237,9 +237,9 @@ dropdownSeed:OnChanged(function(Value)
     end
 end)
 
-local section = loja:AddSection("Gears")
+local section = Shop:AddSection("Gears")
 
-loja:AddToggle("", {
+Shop:AddToggle("", {
     Title = "Buy shop gear",
     Description = "Buy shop gear",
     Default = false,
@@ -248,7 +248,7 @@ loja:AddToggle("", {
     end
 })
 
-local dropdownGear = loja:AddDropdown("DropdownGear", {
+local dropdownGear = Shop:AddDropdown("DropdownGear", {
     Title = "Selecione gears para comprar\n",
     Description = "Selecione gears para comprar\n",
     Values = bygear,
@@ -265,7 +265,7 @@ dropdownGear:OnChanged(function(Value)
     end
 end)
 
-local section = loja:AddSection("Auto Buy egg")
+local section = Shop:AddSection("Auto Buy egg")
 
 function gne(n)
     local f, l, r = workspace.NPCS["Pet Stand"].EggLocations:GetChildren(), {}, {}
@@ -275,7 +275,7 @@ function gne(n)
     return r
 end
 local selected = {}
-local mdp = loja:AddDropdown("MultiDropdown", {
+local mdp = Shop:AddDropdown("MultiDropdown", {
     Title = "Selecionar Eggs",
     Description = "",
     Values = {
@@ -294,7 +294,7 @@ end)
 
 _G.bpd = false
 
-loja:AddToggle("", {
+Shop:AddToggle("", {
     Title = "Comprar Automaticamente Eggs selecionados. \n",
     Description = "",
     Default = false,
@@ -690,7 +690,7 @@ ui:AddSection("Controle de UIs")
 
 ui:AddButton({
     Title = "Cosmetic Shop UI",
-    Description = "Ativa/Desativa a loja de cosmeticos",
+    Description = "Ativa/Desativa a Shop de cosmeticos",
     Callback = function()
         local ui = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("CosmeticShop_UI")
         if ui then
@@ -703,7 +703,7 @@ ui:AddButton({
 
 ui:AddButton({
     Title = "Gear Shop UI",
-    Description = "Ativa/Desativa a loja de equipamentos",
+    Description = "Ativa/Desativa a Shop de equipamentos",
     Callback = function()
         local ui = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Gear_Shop")
         if ui then
@@ -716,7 +716,7 @@ ui:AddButton({
 
 ui:AddButton({
     Title = "Seed Shop UI",
-    Description = "Ativa/Desativa a loja de sementes",
+    Description = "Ativa/Desativa a Shop de sementes",
     Callback = function()
         local ui = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Seed_Shop")
         if ui then
