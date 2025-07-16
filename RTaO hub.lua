@@ -54,33 +54,36 @@ local Window = Fluent:CreateWindow({
 -- Local Tabs --
 
 local player = Window:AddTab({
-    Title = "Jogador",
+    Title = "main",
     Icon = "user"
 })
-
 local Shop = Window:AddTab({
     Title = "Shop",
     Icon = "shopping-cart" 
 })
 
 local pet = Window:AddTab({
-    Title = "Mascotes",
+    Title = "Pet",
     Icon = "rbxassetid://130754538725129"
 })
 
 local plant = Window:AddTab({
-    Title = "plant/water",
+    Title = "Frame",
     Icon = "rbxassetid://91815274279491"
 })
 
 local sell = Window:AddTab({
-    Title = "Vender",
+    Title = "Sell",
     Icon = "rbxassetid://87631616608256" 
 })
 
 local event = Window:AddTab({
-    Title = "Eventos",
+    Title = "Event",
     Icon = "rbxassetid://88058653294248"
+})
+local Tp = Window:AddTab({
+    Title = "teleport",
+    Icon = "user"
 })
 
 local vuln = Window:AddTab({
@@ -89,7 +92,7 @@ local vuln = Window:AddTab({
 })
 
 local utility = Window:AddTab({
-    Title = "utility",
+    Title = "Webhooks",
     Icon = "wrench"
 })
 
