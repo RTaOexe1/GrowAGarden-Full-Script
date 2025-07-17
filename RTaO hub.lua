@@ -425,6 +425,108 @@ plant:AddToggle("AutoSpamPlant", {
     end
 })
 
+-- 🌾 SECTION: Auto Farm (Harvest Prompt)
+plant:AddSection("Auto Farm (Instant Prompt)")
+
+local autoFarmEnabled = false
+local farmThread
+
+-- ใส่ฟังก์ชัน updateFarmData ที่คุณให้มา:
+local farms = {}
+local plants = {}
+local function updateFarmData()
+    farms = {}
+    plants = {}
+    for _, farm in pairs(workspace:FindFirstChild("Farm"):GetChildren()) do
+        local data = farm:FindFirstChild("Important") and farm.Important:FindFirstChild("Data")
+        if data and data:FindFirstChild("Owner") and data.Owner.Value == player.Name then
+            table.insert(farms, farm)
+            local plantsFolder = farm.Important:FindFirstChild("Plants_Physical")
+            if plantsFolder then
+                for _, plantModel in pairs(plantsFolder:GetChildren()) do
+                    for _, part in pairs(plantModel:GetDescendants()) do
+                        if part:IsA("BasePart") and part:FindFirstChildOfClass("ProximityPrompt") then
+                            table.insert(plants, part)
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- ฟังก์ชัน Teleport แบบ Glitch
+local function glitchTeleport(pos)
+    if not player.Character then return end
+    local root = player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local tween = game:GetService("TweenService"):Create(root, TweenInfo.new(0.15, Enum.EasingStyle.Linear), {CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))})
+    tween:Play()
+end
+
+-- ตรวจสอบว่า inventory เต็มหรือไม่
+local function isInventoryFull()
+    local inv = player:FindFirstChild("Inventory")
+    if inv and inv:FindFirstChild("Plants") then
+        return #inv.Plants:GetChildren() >= 60 -- หรือเปลี่ยนเลขตามที่เกมจำกัด
+    end
+    return false
+end
+
+-- ฟังก์ชันหลัก Auto Farm
+local function instantFarm()
+    if farmThread then task.cancel(farmThread) end
+    farmThread = task.spawn(function()
+        while autoFarmEnabled do
+            while isInventoryFull() do
+                if not autoFarmEnabled then return end
+                task.wait(1)
+            end
+            if not autoFarmEnabled then return end
+            updateFarmData()
+            for _, part in pairs(plants) do
+                if not autoFarmEnabled then return end
+                if isInventoryFull() then break end
+                if part and part.Parent then
+                    local prompt = part:FindFirstChildOfClass("ProximityPrompt")
+                    if prompt then
+                        glitchTeleport(part.Position)
+                        task.wait(0.2)
+                        for _, farm in pairs(farms) do
+                            if not autoFarmEnabled or isInventoryFull() then break end
+                            for _, obj in pairs(farm:GetDescendants()) do
+                                if obj:IsA("ProximityPrompt") then
+                                    local str = tostring(obj.Parent)
+                                    if not (str:find("Grow_Sign") or str:find("Core_Part")) then
+                                        fireproximityprompt(obj, 1)
+                                    end
+                                end
+                            end
+                        end
+                        task.wait(0.2)
+                    end
+                end
+            end
+            if autoFarmEnabled then task.wait(0.1) end
+        end
+    end)
+end
+
+-- 🔘 เพิ่ม Toggle เข้า Fluent UI tab "Frame"
+plant:AddToggle("AutoFarmToggle", {
+    Title = "🌾 Enable Auto Farm (Instant Harvest)",
+    Default = false,
+    Callback = function(state)
+        autoFarmEnabled = state
+        if autoFarmEnabled then
+            instantFarm()
+        elseif farmThread then
+            task.cancel(farmThread)
+        end
+    end
+})
+
 plant:AddSection("Water spam (Pos Dropdown)")
 
 local Player = game.Players.LocalPlayer
