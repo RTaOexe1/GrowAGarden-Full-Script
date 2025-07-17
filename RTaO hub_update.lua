@@ -425,6 +425,179 @@ plant:AddToggle("AutoSpamPlant", {
     end
 })
 
+-- 📁 Auto Farm Section
+plant:AddSection("Auto Farm (Instant Prompt)")
+
+local lp = game:GetService("Players").LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local buySeed = ReplicatedStorage.GameEvents:WaitForChild("BuySeedStock")
+
+local autoFarmEnabled = false
+local farmThread
+local farms = {}
+local plants = {}
+local seedName = "Carrot"
+local seedLimit = 5
+local seedCountUsed = 0
+
+-- 📋 Log Paragraph
+local logLines = {}
+local maxLines = 10
+local logBox = plant:AddParagraph({
+    Title = "📋 AutoFarm Log",
+    Content = "เริ่มต้นพร้อมทำงาน..."
+})
+
+local function log(msg)
+    table.insert(logLines, 1, "[AF] " .. msg)
+    if #logLines > maxLines then
+        table.remove(logLines)
+    end
+    logBox:SetContent(table.concat(logLines, "\n"))
+end
+
+-- 🌱 เลือกเมล็ด
+local seedList = {
+    "Carrot", "Strawberry", "Tomato", "Watermelon", "Pineapple",
+    "Blueberry", "Banana", "Coconut", "Pumpkin", "Cauliflower"
+}
+
+plant:AddDropdown("AutoFarmSeedList", {
+    Title = "🌱 เลือกเมล็ดที่ใช้ปลูก",
+    Description = "จะซื้ออัตโนมัติและถือใช้งาน",
+    Values = seedList,
+    Multi = false,
+    Default = 1,
+    Callback = function(value)
+        seedName = value
+        log("ใช้เมล็ด: " .. seedName)
+    end
+})
+
+plant:AddSlider("SeedLimitSlider", {
+    Title = "📦 จำนวนปลูกต่อรอบ",
+    Min = 1,
+    Max = 50,
+    Default = 5,
+    Rounding = 0,
+    Callback = function(val)
+        seedLimit = val
+        log("ตั้งจำนวนปลูกต่อรอบ: " .. val)
+    end
+})
+
+local function updateFarmData()
+    farms, plants = {}, {}
+    for _, farm in pairs(workspace:FindFirstChild("Farm"):GetChildren()) do
+        local data = farm:FindFirstChild("Important") and farm.Important:FindFirstChild("Data")
+        if data and data:FindFirstChild("Owner") and data.Owner.Value == lp.Name then
+            table.insert(farms, farm)
+            local plantsFolder = farm.Important:FindFirstChild("Plants_Physical")
+            if plantsFolder then
+                for _, plantModel in pairs(plantsFolder:GetChildren()) do
+                    for _, part in pairs(plantModel:GetDescendants()) do
+                        if part:IsA("BasePart") and part:FindFirstChildOfClass("ProximityPrompt") then
+                            table.insert(plants, part)
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function glitchTeleport(pos)
+    if not lp.Character then return end
+    local root = lp.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local tween = game:GetService("TweenService"):Create(root, TweenInfo.new(0.15, Enum.EasingStyle.Linear), {
+        CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))
+    })
+    tween:Play()
+end
+
+local function isInventoryFull()
+    local inv = lp:FindFirstChild("Inventory")
+    return inv and inv:FindFirstChild("Plants") and #inv.Plants:GetChildren() >= 60
+end
+
+local function sellInventory()
+    ReplicatedStorage.GameEvents:WaitForChild("Sell_Inventory"):FireServer()
+    log("📦 Inventory เต็ม → ขายอัตโนมัติแล้ว")
+end
+
+local function ensureSeedTool()
+    local tool = lp.Character and lp.Character:FindFirstChildOfClass("Tool")
+    if not tool or not tool.Name:lower():find(seedName:lower()) then
+        buySeed:FireServer(seedName)
+        log("🛒 ซื้อเมล็ด: " .. seedName)
+        task.wait(0.5)
+    end
+end
+
+local function plantSeedAt(pos)
+    ensureSeedTool()
+    local tool = lp.Character and lp.Character:FindFirstChildOfClass("Tool")
+    if not tool then return end
+    local name = tool.Name:match("^(.-)%s+[Ss]eed") or tool.Name
+    name = name:gsub("%s+$", "")
+    ReplicatedStorage.GameEvents.Plant_RE:FireServer(pos, name)
+    seedCountUsed += 1
+    log("🌱 ปลูกที่: (" .. math.floor(pos.X) .. ", " .. math.floor(pos.Z) .. ") → " .. name .. " #" .. seedCountUsed)
+end
+
+local function instantFarm()
+    if farmThread then task.cancel(farmThread) end
+    farmThread = task.spawn(function()
+        while autoFarmEnabled do
+            seedCountUsed = 0
+            while isInventoryFull() do
+                sellInventory()
+                task.wait(1)
+            end
+            updateFarmData()
+            for _, part in pairs(plants) do
+                if not autoFarmEnabled or isInventoryFull() or seedCountUsed >= seedLimit then break end
+                if part and part.Parent then
+                    local prompt = part:FindFirstChildOfClass("ProximityPrompt")
+                    if prompt then
+                        glitchTeleport(part.Position)
+                        task.wait(0.2)
+                        for _, farm in pairs(farms) do
+                            for _, obj in pairs(farm:GetDescendants()) do
+                                if obj:IsA("ProximityPrompt") and not tostring(obj.Parent):find("Grow_Sign") then
+                                    fireproximityprompt(obj, 1)
+                                end
+                            end
+                        end
+                        task.wait(0.2)
+                        if not isInventoryFull() and seedCountUsed < seedLimit then
+                            plantSeedAt(part.Position)
+                        end
+                    end
+                end
+            end
+            task.wait(0.1)
+        end
+    end)
+end
+
+plant:AddToggle("AutoFarmToggle", {
+    Title = "🌾 เปิด/ปิด Auto Farm (Harvest + Plant + Sell)",
+    Default = false,
+    Callback = function(state)
+        autoFarmEnabled = state
+        if autoFarmEnabled then
+            log("✅ เริ่ม Auto Farm...")
+            instantFarm()
+        elseif farmThread then
+            log("⛔ หยุด Auto Farm")
+            task.cancel(farmThread)
+        end
+    end
+})
+
 plant:AddSection("Water spam (Pos Dropdown)")
 
 local Player = game.Players.LocalPlayer
